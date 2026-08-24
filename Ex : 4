@@ -1,0 +1,40 @@
+import numpy as np
+import tensorflow as tf
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Embedding, SimpleRNN, Dense
+text = "I love machine learning. I love deep learning. Machine learning is interesting."
+words = text.lower().replace(".", "").split()
+vocab = sorted(set(words))
+word_to_index = {word: i for i, word in enumerate(vocab)}
+index_to_word = {i: word for word, i in word_to_index.items()}
+sequence_length = 3
+X = []
+y = []
+for i in range(len(words) - sequence_length):
+    sequence = words[i:i + sequence_length]
+    target = words[i + sequence_length]
+    X.append([word_to_index[word] for word in sequence])
+    y.append(word_to_index[target])
+X = np.array(X)
+y = np.array(y)
+model = Sequential([
+    Embedding(input_dim=len(vocab), output_dim=10),
+    SimpleRNN(32),
+    Dense(len(vocab), activation="softmax")
+])
+model.compile(
+    optimizer="adam",
+    loss="sparse_categorical_crossentropy",
+    metrics=["accuracy"]
+)
+model.fit(X, y, epochs=200, verbose=0)
+def predict_next_word(sentence):
+    input_words = sentence.lower().split()[-sequence_length:]
+    input_sequence = np.array([[word_to_index[word] for word in input_words]])
+    prediction = model.predict(input_sequence, verbose=0)
+    predicted_index = np.argmax(prediction)
+    return index_to_word[predicted_index]
+sentence = "i love machine"
+next_word = predict_next_word(sentence)
+print("Input sentence:", sentence)
+print("Predicted next word:", next_word)
